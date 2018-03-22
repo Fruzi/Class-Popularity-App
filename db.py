@@ -70,7 +70,7 @@ def fetch_users_near_antena(_bssid, _max_time, _min_signal):
     # This function expectes _max_time in minutes
     _max_time = _max_time * 60
     _max_time += int(time.time())
-
+    
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
         cursor.execute("""SELECT user_id FROM Users_Near_Antennas WHERE bssid = (?) AND
@@ -79,7 +79,7 @@ def fetch_users_near_antena(_bssid, _max_time, _min_signal):
         return map(lambda x: x[0], cursor.fetchall())
 
         
-def fetch_antenna_users(_user_id, _max_time, _min_signal):
+def fetch_bsids_near_user(_user_id, _max_time, _min_signal):
     # This function expectes _max_time in minutes
     _max_time = _max_time * 60
     _max_time += int(time.time())
@@ -92,11 +92,12 @@ def fetch_antenna_users(_user_id, _max_time, _min_signal):
         return map(lambda x: x[0], cursor.fetchall())
 
 def nearby_users(user_id, _max_time, _min_siganl):
-    bssid_list = fetch_users_near_antena(user_id, _max_time, _min_siganl)
+    bssid_list = fetch_bsids_near_user(user_id, _max_time, _min_siganl)
+    
     users = list()
     
     for bssid in bssid_list:
-        users += fetch_antenna_users(bssid, _max_time, _min_siganl)
+        users += fetch_users_near_antena(bssid, _max_time, _min_siganl)
 
     return list(set(users))
 
@@ -254,7 +255,7 @@ def fetch_lectures_by_user_and_time(_user, _time):
     result = 0
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""SELECT class_id, l.course_id as course_id, day, start_time, end_time, location
+        cursor.execute("""SELECT l.class_id, l.course_id as course_id, day, location
                           FROM Lectures as l
                             JOIN Users_In_Courses as uic ON uic.course_id = l.course_id
                           WHERE uic.user_id=?
@@ -278,25 +279,29 @@ def lectures_screen(_course):
 def get_possible_lecture(user_id):
     now = datetime.datetime.now()
     now = now.hour * 60 + now.minute
+    
+    #print "REMOVEEEEEEEEEEEEEE"
+    #now = 13 * 60 + 30
 
     near_users = nearby_users(user_id, 10, -40)
 
     my_lectures = set(fetch_lectures_by_user_and_time(user_id, now))
-    my_courses = set([lec["course_id"] for lec in my_lectures])
+    my_lectures = set([class_id for class_id, course_id, day, location in my_lectures])
     counter = dict()
+    
 
     for near_user_id in near_users:
         lectures = fetch_lectures_by_user_and_time(user_id, now)
-        courses = set([lec["course_id"] for lec in lectures])
+        lectures = set([class_id for class_id, course_id, day, location in lectures])
 
-        for course_id in my_courses:
-            if course_id in courses:
-                if course_id not in counter.keys():
-                    counter[course_id] = 0
+        for class_id in my_lectures:
+            if class_id in lectures:
+                if class_id not in counter.keys():
+                    counter[class_id] = 0
 
-                counter[course_id] += 1
+                counter[class_id] += 1
 
-    return sorted(counter.iteritems(), key=lambda (k,v): (v,k), reverse=True)
+    return [class_id for class_id, count in sorted(counter.iteritems(), key=lambda (k,v): (v,k), reverse=True)]
 
 
 if __name__ == '__main__':

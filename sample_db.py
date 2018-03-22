@@ -3,7 +3,7 @@ import db
 import sendssl
 import json
 
-#sendssl.insert_to_db(limit=1)
+sendssl.insert_to_db(limit=1)
 
 user_id = db.add_user("11:11:11:11:11", "uzi")
 db.register_to_course(user_id, 1)
@@ -36,5 +36,12 @@ db.register_to_course(user_id, 8)
 db.add_antenna(user_id, json.dumps([{"bssid": "aa:aa:aa", "snr": -50},
                                     {"bssid": "cc:cc:cc", "snr": -30}]))
 
+
+user_id = db.add_user("55:55:55:55:55", "oz2")
+db.register_to_course(user_id, 1)
+db.register_to_course(user_id, 5)
+db.register_to_course(user_id, 8)
+db.add_antenna(user_id, json.dumps([{"bssid": "aa:aa:aa", "snr": -50},
+                                    {"bssid": "cc:cc:cc", "snr": -30}]))
 
 print db.get_possible_lecture(1)
