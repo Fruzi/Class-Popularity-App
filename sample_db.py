@@ -3,7 +3,7 @@ import db
 import sendssl
 import json
 
-sendssl.insert_to_db(limit=1)
+#sendssl.insert_to_db(limit=1)
 
 user_id = db.add_user("11:11:11:11:11", "uzi")
 db.register_to_course(user_id, 1)
@@ -36,7 +36,5 @@ db.register_to_course(user_id, 8)
 db.add_antenna(user_id, json.dumps([{"bssid": "aa:aa:aa", "snr": -50},
                                     {"bssid": "cc:cc:cc", "snr": -30}]))
 
-print db.nearby_users(json.dumps([{"bssid": "aa:aa:aa"},
-                                  {"bssid": "cc:cc:cc"}]),
-                      10, -40)
-print db.fetch_lectures_by_user_and_time(1, 13*60+30)
+
+print db.get_possible_lecture(1)
