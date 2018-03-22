@@ -9,6 +9,7 @@ import io.realm.Realm
 
 import kotlinx.android.synthetic.main.activity_main.*
 import android.net.wifi.WifiManager
+import android.os.AsyncTask
 import android.os.Build
 import android.util.Log
 import org.json.JSONArray
@@ -33,6 +34,12 @@ class MainActivity : AppCompatActivity() {
         realm.executeTransaction {
             realm.deleteAll()
         }
+
+        depsCourses = mapOf(
+                "201 Mathematics" to listOf("20114312 Algebra"),
+                "202 Computer Science" to listOf("20213521 Operating Systems",
+                                               "20218745 Intro to CS")
+        )
 
         mWifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
@@ -65,10 +72,9 @@ class MainActivity : AppCompatActivity() {
                         }
                         Log.v(" abc ", hotspots.toString())
 
-                        val tempArr = JSONArray()
-                        tempArr.put(JSONObject("""{"dep":"202"}"""))
+                        val tempObj = JSONObject("""{"dep":"1"}""")
                        // var temp = JSONArray(JSONObject("""{"dep":"202"}"""))
-                        request("132.73.222.44",8000,"fetch_courses",tempArr)
+                        SocketTask("132.73.195.156",8000,"fetch_courses",tempObj).execute()
                     }
                 }
             }
@@ -89,13 +95,24 @@ class MainActivity : AppCompatActivity() {
         realm.close()
     }
 
-    fun request (ip :String,port :Int ,funcName:String,jsonArray: JSONArray )
-    {
-        val req =  "POST /$funcName HTTP1.1\r\nContent-Length: ${jsonArray.toString().length}\r\n\r\n$jsonArray\r\n\r\n"
-        var socket =  Socket(ip, port)
-        socket.getOutputStream().write(req.toByteArray())
-        val data = socket.getInputStream().bufferedReader().use { it.readText() }
-        Log.v("Response:\n", data)
+    class SocketTask(val ip: String, val port: Int, val funcName: String, val jsonObject: JSONObject)
+        : AsyncTask<Void, Void, String?>() {
+
+        override fun doInBackground(vararg params: Void?): String? {
+            val req =  "POST /$funcName HTTP/1.1\r\nContent-Length: ${jsonObject.toString().length}\r\n\r\n$jsonObject\r\n\r\n"
+            var socket =  Socket(ip, port)
+            Log.v("SocketTask", "Sending $req")
+            socket.getOutputStream().write(req.toByteArray())
+            socket.shutdownOutput()
+            val data = socket.getInputStream().bufferedReader().use {
+                it.readText()
+            }
+            return data
+        }
+
+        override fun onPostExecute(result: String?) {
+            Log.v("SocketTask", "Response: $result")
+        }
     }
 
     companion object {
