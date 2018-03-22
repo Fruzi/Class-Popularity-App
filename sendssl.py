@@ -105,6 +105,13 @@ def course_list(departemnt):
 
     return courses
 
+def hour_to_int(hour):
+    if hour.count(":") != 1:
+        return -1
+    
+    h, m = hour.split(":")
+    return m + h * 12
+
 def course_details(course_num, departemnt, year, semester, degree_level):
     html = course_details_raw(course_num, departemnt, year, semester, degree_level)
     
@@ -138,8 +145,8 @@ def course_details(course_num, departemnt, year, semester, degree_level):
             THURSDAY  = """\xd7\x99\xd7\x95\xd7\x9d \xd7\x94"""
             
             lec["day"] = 0
-            lec["start_time"] = ""
-            lec["end_time"] = ""
+            lec["start_time"] = -1
+            lec["end_time"] = -1
             
             if SUNDAY    in lec["time"]: lec["day"] = 1
             if MONDAY    in lec["time"]: lec["day"] = 2
@@ -155,8 +162,11 @@ def course_details(course_num, departemnt, year, semester, degree_level):
             
             if t.count("-") == 1:
                 start_time, end_time = t.split("-")
-                lec["start_time"] = start_time.replace("""<div class="myltr">""", "").strip()
-                lec["end_time"] = end_time.replace("""</div></br>""", "").strip()
+                start_time = start_time.replace("""<div class="myltr">""", "").strip()
+                end_time = end_time.replace("""</div></br>""", "").strip()
+                
+                lec["start_time"] = hour_to_int(start_time)
+                lec["end_time"] = hour_to_int(end_time)
             
             lec["place"] = lec["place"].replace("</br>", "").strip()
             
@@ -210,7 +220,7 @@ def departemnt_courses(departemnt):
     
     return courses
 
-def insert_to_db(limit=2):
+def insert_to_db(limit=1000):
     import db
     db.create_db()
 
@@ -243,4 +253,5 @@ def insert_to_db(limit=2):
                            _location=lec["place"].decode("utf8"),
                            )
 
-insert_to_db()
+if __name__ == "__main__":
+    insert_to_db()

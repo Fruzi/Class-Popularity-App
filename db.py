@@ -172,6 +172,12 @@ def get_users_of_course(_course_id):
         cursor = dbcon.cursor()
         cursor.execute("""SELECT user_id FROM Users_In_Courses WHERE course_id = (?)""", (_course_id,))
         return cursor.fetchall()
+        
+
+def register_to_course(_user_id, _course_id):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""INSERT INTO Users_In_Courses (course_id, user_id) VALUES (? ?)""", (_course_id, user_id))
 
 
 def fetch_user_rating(_user):
@@ -223,6 +229,18 @@ def times_attended_this_week(lecture, user):
             if datetime_object.isocalender()[1] == now:
                 result += 1
         return result
+        
+        
+def fetch_lectures_by_user_and_time(_user, _time):
+    result = 0
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT class_id, course_id, day, start_time, end_time, location
+                          FROM Lectures as l
+                            JOIN Users_In_Courses as uic ON uic.course_id = c.course_id
+                          WHERE uic.user_id=?
+                            AND l.start_time >= ? AND l.end_time <= ?""", (_user, _time, _time))
+        return list(cursor.fetchall())
 
 
 def course_screen():
