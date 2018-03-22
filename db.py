@@ -54,7 +54,7 @@ def create_db():
 
 
 def add_antenna(_user_id, _antenna_data):
-    curr_time = time.time()
+    curr_time = int(time.time())
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
         cursor.execute("""DELETE FROM Users_Near_Antennas WHERE (user_id)=(?)""", (_user_id,))
@@ -67,11 +67,14 @@ def add_antenna(_user_id, _antenna_data):
 
 
 def fetch_antenna_users(_bssid, _max_time, _min_signal):
+    # This function expectes _max_time in minutes
+    _max_time = _max_time * 60
+
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
         cursor.execute("""SELECT user_id FROM Users_Near_Antennas WHERE bssid = (?) AND
-                          (?)-time_stamp<(?) AND signal>(?)""",
-                       (_bssid, time.time(), _max_time, _min_signal))
+                          (?)-time_stamp<=(?) AND signal>=(?)""",
+                       (_bssid, int(time.time()), _max_time, _min_signal))
         return cursor.fetchall()
 
 
@@ -150,7 +153,7 @@ def add_rating(_rating, _user_id, _course_id, _class_id):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
         cursor.execute("""INSERT INTO Ratings (rating, user_id, course_id, class_id, rate_date)
-                          VALUES (?, ?, ?, ? ,?)""", (_rating, _user_id, _course_id, _class_id, time.time()))
+                          VALUES (?, ?, ?, ? ,?)""", (_rating, _user_id, _course_id, _class_id, int(time.time())))
 
 
 def fetch_users():
@@ -177,7 +180,7 @@ def get_users_of_course(_course_id):
 def register_to_course(_user_id, _course_id):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""INSERT INTO Users_In_Courses (course_id, user_id) VALUES (? ?)""", (_course_id, user_id))
+        cursor.execute("""INSERT INTO Users_In_Courses (course_id, user_id) VALUES (?, ?)""", (_course_id, _user_id))
 
 
 def fetch_user_rating(_user):
