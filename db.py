@@ -5,8 +5,7 @@ import time
 
 
 def main():
-    create_db()
-    print times_attended_this_week(1, 1)
+    add_department("45", "poooop")
 
 
 def create_db():
@@ -52,11 +51,7 @@ def add_department(_num, _name):
         cursor = dbcon.cursor()
         cursor.execute("""INSERT INTO Departments (department_num, department_name) VALUES(?, ?)""",
                        (_num, _name))
-        cursor.execute("""SELECT * FROM Departments WHERE department_name=(?) AND department_num=(?)""", (_name, _num))
-        ret = cursor.fetchall()
-        if (ret):
-            return ret[0]
-        return -1
+        return cursor.lastrowid
 
 
 def add_course(_num, _name, _dep):
@@ -64,12 +59,7 @@ def add_course(_num, _name, _dep):
         cursor = dbcon.cursor()
         cursor.execute("""INSERT INTO Courses (course_number, name, department_id) VALUES (?,?,?)""",
                        (_num, _name, _dep))
-        cursor.execute("""SELECT * FROM Courses WHERE course_number=(?) AND
-                          name=(?) AND department_id=(?)""", (_num, _name, _dep))
-        ret = cursor.fetchall()
-        if (ret):
-            return ret[0]
-        return -1
+        return cursor.lastrowid
 
 
 def add_lecture(_course_id, _day, _start_time, _end_time, _location):
@@ -78,13 +68,7 @@ def add_lecture(_course_id, _day, _start_time, _end_time, _location):
         cursor.execute("""INSERT INTO Lectures (course_id, day, start_time,
                           end_time, room, building) VALUES (?, ?, ?, ?, ?)""",
                        (_course_id, _day, _start_time, _end_time, _location))
-        cursor.execute(
-            """SELECT * FROM Lectures WHERE course_id =(?) AND day = (?) AND start_time =(?) AND location=(?) """,
-            (_course_id, _day, _start_time, _location))
-        ret = cursor.fetchall()
-        if ret:
-            return ret[0]
-        return -1
+        return cursor.lastrowid
 
 
 def fetch_departments():
