@@ -212,20 +212,24 @@ def insert_to_db(limit=2):
             continue
 
         for course in departemnt_courses(int(departemnt["departemnt_num"])):
+            lec = course["houres"]
+            
+            if not lec:
+                continue
+        
             course_id = db.add_course(_num="%d.%d.%d" % (course["departemnt"],
                                                          course["degree_level"],
                                                          course["course_num"],
                                                         ),
-                                      _name=course["course_name"].decode("utf8"),
+                                      _name=course["course_name"],
                                       _dep=dep_id)
-            
-            for lec in course["houres"]:
-                db.add_lecture(_course_id=course_id,
-                               _day=lec["day"],
-                               _start_time=lec["start_time"],
-                               _end_time=lec["end_time"],
-                               _place=lec["place"],
-                               )
+
+            db.add_lecture(_course_id=course_id,
+                           _day=lec["day"],
+                           _start_time=lec["start_time"],
+                           _end_time=lec["end_time"],
+                           _location=lec["place"].decode("utf8"),
+                           )
 
 insert_to_db()
     
