@@ -4,9 +4,8 @@ import os
 
 def main():
     create_db()
-    add_user("Amit", "other fake data")
-    update_last_antena_data("new fake data", 1)
-    print globals()
+    print add_course("Rawn", 1, 1)
+    print fetch_courses()
 
 
 def create_db():
@@ -54,7 +53,7 @@ def fetch_courses(dep=None):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
         if dep:
-            cursor.execute("""SELECT * FROM Courses WHERE department_id = (?)""", dep)
+            cursor.execute("""SELECT * FROM Courses WHERE department_id = (?)""", (dep,))
         else:
             cursor.execute("""SELECT * FROM Courses""")
         return cursor.fetchall()
@@ -63,14 +62,14 @@ def fetch_courses(dep=None):
 def fetch_lectures(_course):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""SELECT * FROM Lectures WHERE course_id = (?)""", _course)
+        cursor.execute("""SELECT * FROM Lectures WHERE course_id = (?)""", (_course,))
         return cursor.fetchall()
 
 
 def fetch_lecture_rating(_lecture):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""SELECT * FROM Rating WHERE class_id = (?)""", _lecture)
+        cursor.execute("""SELECT * FROM Rating WHERE class_id = (?)""", (_lecture,))
         return cursor.fetchall()
 
 
@@ -84,21 +83,31 @@ def fetch_users():
 def fetch_user_rating(_user):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""SELECT * FROM Rating WHERE user_id = (?)""", _user)
+        cursor.execute("""SELECT * FROM Rating WHERE user_id = (?)""", (_user,))
         return cursor.fetchall()
 
 
 def add_department(_name):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""INSERT INTO Departments (name) VALUES (?)""", _name)
+        cursor.execute("""INSERT INTO Departments (department_name) VALUES(?)""",
+                       (_name,))
+        cursor.execute("""SELECT * FROM Departments WHERE department_name=(?)""", (_name,))
+        if cursor.fetchall():
+            return 1
+        return -1
 
 
 def add_course(_num, _name, _dep):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""INSERT INTO Courses (course_number, name, department) VALUES (?,?,?)""",
+        cursor.execute("""INSERT INTO Courses (course_number, name, department_id) VALUES (?,?,?)""",
                        (_num, _name, _dep))
+        cursor.execute("""SELECT * FROM Courses WHERE course_number=(?) AND
+                          name=(?) AND department_id=(?)""", (_num, _name, _dep))
+        if cursor.fetchall():
+            return 1
+        return -1
 
 
 def add_lecture(_course_id, _day, _start_time, _end_time, _room, _building):
