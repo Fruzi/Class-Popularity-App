@@ -26,7 +26,7 @@ def https(req, host=HOST, port=PORT):
     return data
 
 def course_list_raw(departemnt):
-    data = body.format(departemnt=departemnt)
+    data = """rc_rowid=&lang=he&st=s&step=2&oc_course_name=&on_course_ins=0&on_course_ins_list=0&on_course_department={departemnt}&on_course_department_list={departemnt}&on_course_degree_level=&on_course_degree_level_list=&on_course=&on_semester=&on_year=0&on_hours=&on_credit_points=&oc_lecturer_first_name=&oc_lecturer_last_name=&on_common=&oc_end_time=&oc_start_time=&on_campus=""".format(departemnt=departemnt)
     
     return https("""POST /pls/scwp/!app.ann HTTP/1.1
 Host: bgu4u.bgu.ac.il
@@ -68,10 +68,12 @@ Accept-Language: en-US,en;q=0.9,he;q=0.8
 """.format(contentlen=len(data), data=data))
 
 def departemnt_list_raw():
+    data = """rc_rowid=&lang=he&st=s&step=1"""
+
     return https("""POST /pls/scwp/!app.ann HTTP/1.1
 Host: bgu4u.bgu.ac.il
 Connection: keep-alive
-Content-Length: 29
+Content-Length: {contentlen}
 Cache-Control: max-age=0
 Origin: https://bgu4u.bgu.ac.il
 Upgrade-Insecure-Requests: 1
@@ -82,10 +84,10 @@ Referer: https://bgu4u.bgu.ac.il/pls/scwp/!app.ann?lang=he
 Accept-Encoding: gzip, deflate, br
 Accept-Language: en-US,en;q=0.9,he;q=0.8
 
-rc_rowid=&lang=he&st=s&step=1
+{data}
 
 
-""")
+""".format(contentlen=len(data), data=data))
 
 def course_list(departemnt):
     html = course_list_raw(departemnt)
@@ -167,7 +169,11 @@ def departemnt_courses(departemnt):
     
     return courses
 
+print departemnt_courses(1)
 print departemnt_courses(2)
+print departemnt_courses(3)
+print departemnt_courses(201)
+print departemnt_courses(202)
         
 #for departemnt in departemnt_list()[:2]:
 #    print int(departemnt["departemnt_num"])
