@@ -42,7 +42,7 @@ def create_db():
                             user_id INTEGER NOT NULL REFERENCES Users(user_id),
                             course_id INTEGER NOT NULL REFERENCES Courses(course_id),
                             class_id INTEGER NOT NULL REFERENCES  Lectures(class_id),
-                            date TEXT)""")
+                            rate_date INTEGER)""")
             cursor.execute("""CREATE TABLE Users_In_Courses(
                             user_id INTEGER NOT NULL REFERENCES Users(user_id),
                             course_id INTEGER NOT NULL REFERENCES Courses(course_id))""")
@@ -50,22 +50,38 @@ def create_db():
                             user_id INTEGER NOT NULL REFERENCES Users(user_id),
                             bssid TEXT NOT NULL,
                             signal INTEGER NOT NULL,
-                            date TEXT NOT NULL)""")
-                            
+                            time_stamp INTEGER NOT NULL)""")
+
+
 def add_antenna(_user_id, _antenna_data):
-    curr_time = datetime.datetime.now()
+    curr_time = time.time()
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""DELETE FROM Users_Near_Antennas WHERE (user_id)=(?)""", (_user_id))
+        cursor.execute("""DELETE FROM Users_Near_Antennas WHERE (user_id)=(?)""", (_user_id,))
         data = json.loads(_antenna_data)
         for antenna in data:
             _bssid = antenna["bssid"]
             _signal = antenna["snr"]
-            cursor.execute("""INSERT INTO Users_Near_Antennas (user_id, bssid, signal, date) VALUES(?, ?, ?, ?)""", (_user_id, _bssid, _signal, curr_time))
+            cursor.execute("""INSERT INTO Users_Near_Antennas (user_id, bssid, signal, time_stamp) VALUES(?, ?, ?, ?)""", (_user_id, _bssid, _signal, curr_time))
     return cursor.lastrowid
-    
-def 
-    
+
+
+def fetch_antenna_users(_bssid, _max_time, _min_signal):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT user_id FROM Users_Near_Antennas WHERE bssid = (?) AND
+                          (?)-time_stamp<(?) AND signal>(?)""",
+                       (_bssid, time.time(), _max_time, _min_signal))
+        return cursor.fetchall()
+
+
+def nearby_users(antenna_data, _max_time, _min_siganl):
+    users = list()
+    for a in antenna_data:
+        users += fetch_antenna_users(a[1], _max_time, _min_siganl)
+    list(set(users))
+
+
 def add_department(_num, _name):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
@@ -108,7 +124,7 @@ def fetch_courses(dep=None):
         return cursor.fetchall()
 
 
-def fetch_lectures(_course):
+def fetch_lectures(_course=None):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
         cursor.execute("""SELECT * FROM Lectures WHERE course_id = (?)""", (_course,))
@@ -127,29 +143,14 @@ def add_user(_mac, _name):
         cursor = dbcon.cursor()
         cursor.execute("""INSERT INTO Users (mac, name)VALUES (?, ?)""",
                        (_mac, _name))
-        #cursor.execute("""SELECT * FROM Users WHERE mac = (?)""", (_mac,))
         return cursor.lastrowid
-
-
-def update_last_antena_data(data, _user_id):
-    with sqlite3.connect('example.db') as dbcon:
-        cursor = dbcon.cursor()
-        cursor.execute("""UPDATE Users SET last_antenna_data = (?) WHERE user_id = (?)""",
-                       (data, _user_id))
 
 
 def add_rating(_rating, _user_id, _course_id, _class_id):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""INSERT INTO Ratings (rating, user_id, course_id, class_id, date)
-                          VALUES (?, ?, ?, ? ,CURRENT_DATE)""", (_rating, _user_id, _course_id, _class_id))
-
-
-def add_rating_test(_user_id, _course_id, _lecture_id, _rating, date):
-    with sqlite3.connect('example.db') as dbcon:
-        cursor = dbcon.cursor()
-        cursor.execute("""INSERT INTO Ratings (rating, user_id, course_id, lecture_id, lecture_date)
-                          VALUES (?, ?, ?, ? ,?)""", (_rating, _user_id, _course_id, _lecture_id, date))
+        cursor.execute("""INSERT INTO Ratings (rating, user_id, course_id, class_id, rate_date)
+                          VALUES (?, ?, ?, ? ,?)""", (_rating, _user_id, _course_id, _class_id, time.time()))
 
 
 def fetch_users():
