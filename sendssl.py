@@ -110,7 +110,7 @@ def hour_to_int(hour):
         return -1
     
     h, m = hour.split(":")    
-    return int(m) + int(h) * 12
+    return int(m) + int(h) * 60
 
 def course_details(course_num, departemnt, year, semester, degree_level):
     html = course_details_raw(course_num, departemnt, year, semester, degree_level)
