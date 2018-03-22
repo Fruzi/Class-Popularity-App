@@ -69,21 +69,24 @@ def add_antenna(_user_id, _antenna_data):
 def fetch_antenna_users(_bssid, _max_time, _min_signal):
     # This function expectes _max_time in minutes
     _max_time = _max_time * 60
+    _max_time += int(time.time())
 
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
         cursor.execute("""SELECT user_id FROM Users_Near_Antennas WHERE bssid = (?) AND
-                          (?)-time_stamp<=(?) AND signal>=(?)""",
-                       (_bssid, int(time.time()), _max_time, _min_signal))
-        return cursor.fetchall()
+                          time_stamp <= ? AND signal >= ?""",
+                       (_bssid, _max_time, _min_signal))
+        return map(lambda x: x[0], cursor.fetchall())
 
 
 def nearby_users(antenna_data, _max_time, _min_siganl):
     users = list()
     antenna_data = json.loads(antenna_data)
     
+    print antenna_data
+    
     for a in antenna_data:
-        users += fetch_antenna_users(a[1], _max_time, _min_siganl)
+        users += fetch_antenna_users(a["bssid"], _max_time, _min_siganl)
 
     return list(set(users))
 
