@@ -24,7 +24,7 @@ def https(req, host=HOST, port=PORT):
         data += tmp
     
     ssl_sock.close()
-    return data
+    return data.decode("cp1255").encode("utf8")
 
 def course_list_raw(departemnt):
     data = """rc_rowid=&lang=he&st=s&step=2&oc_course_name=&on_course_ins=0&on_course_ins_list=0&on_course_department={departemnt}&on_course_department_list={departemnt}&on_course_degree_level=&on_course_degree_level_list=&on_course=&on_semester=&on_year=0&on_hours=&on_credit_points=&oc_lecturer_first_name=&oc_lecturer_last_name=&on_common=&oc_end_time=&oc_start_time=&on_campus=""".format(departemnt=departemnt)
@@ -170,15 +170,29 @@ def departemnt_courses(departemnt):
     
     return courses
 
-print departemnt_courses(1)
-print departemnt_courses(2)
-print departemnt_courses(3)
-print departemnt_courses(201)
-print departemnt_courses(202)
-        
-#for departemnt in departemnt_list()[:2]:
-#    print int(departemnt["departemnt_num"])
-#    departemnt_courses(int(departemnt["departemnt_num"]))
+def insert_to_db(limit=2):
+    import db
+    db.create_db()
+
+    for departemnt in departemnt_list()[:limit]:
+        #print departemnt["departemnt_name"]
+        #return
+        db.add_department(departemnt["departemnt_name"].decode("utf8"))
+        return
+    
+    for departemnt in departemnt_list()[:limit]:
+        for course in departemnt_courses(int(departemnt["departemnt_num"])):
+            db.add_course(_num="myname",
+                          _name="",
+                          _dep="")
+
+insert_to_db()
+    
+#print departemnt_courses(1)
+#print departemnt_courses(2)
+#print departemnt_courses(3)
+#print departemnt_courses(201)
+#print departemnt_courses(202)
 
 
 #print course_details(course_num=1011, departemnt=202, year=2018, semester=2, degree_level=1)
