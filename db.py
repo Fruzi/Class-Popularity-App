@@ -255,9 +255,10 @@ def fetch_lectures_by_user_and_time(_user, _time):
     result = 0
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""SELECT l.lecture_id, l.course_id as course_id, day, location
+        cursor.execute("""SELECT l.lecture_id, l.course_id as course_id, day, location, c.name
                           FROM Lectures as l
                             JOIN Users_In_Courses as uic ON uic.course_id = l.course_id
+                            JOIN Courses as c ON uic.course_id = c.course_id
                           WHERE uic.user_id=?
                             AND l.start_time <= ? AND ? <= l.end_time""", (_user, _time, _time))
         return list(cursor.fetchall())
@@ -276,7 +277,22 @@ def lectures_screen(_course):
         result.append((l, rating, density))
     return result
 
-def get_possible_lecture(user_id):
+
+def enrich(ids, full):
+    def get_lec_by_id(id):
+        for lec in full:
+            if lec["lecture_id"] == id:
+                return lec
+
+    result = []
+    
+    for id in ids:
+        result.append(get_lec_by_id(id))
+
+    return result
+
+
+def get_possible_lecture_ids(user_id):
     now = datetime.datetime.now()
     now = now.hour * 60 + now.minute
     
@@ -285,7 +301,9 @@ def get_possible_lecture(user_id):
 
     near_users = nearby_users(user_id, 10, -40)
 
-    my_lectures = set(fetch_lectures_by_user_and_time(user_id, now))
+    my_lectures_full = set(fetch_lectures_by_user_and_time(user_id, now))
+    
+    my_lectures = my_lectures_full
     my_lectures = set([lecture_id for lecture_id, course_id, day, location in my_lectures])
     counter = dict()
     
@@ -301,8 +319,14 @@ def get_possible_lecture(user_id):
 
                 counter[lecture_id] += 1
 
-    return [lecture_id for lecture_id, count in sorted(counter.iteritems(), key=lambda (k,v): (v,k), reverse=True)]
-
+    ids = sorted(counter.iteritems(), key=lambda (k,v): (v,k), reverse=True)
+    
+    # At least two students near by
+    ids = filter(lambda x, x[1] >= 2, ids)
+    
+    ids = [lecture_id for lecture_id, count in ids]
+    
+    return enrich(ids, my_lectures_full)
 
 if __name__ == '__main__':
     main()
