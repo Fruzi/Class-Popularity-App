@@ -26,7 +26,7 @@ def create_db():
                             name TEXT NOT NULL,
                             department_id INTEGER NOT NULL REFERENCES  Departments(department_id))""")
             cursor.execute("""CREATE TABLE Lectures (
-                            class_id INTEGER PRIMARY KEY NOT NULL,
+                            lecture_id INTEGER PRIMARY KEY NOT NULL,
                             course_id INTEGER NOT NULL REFERENCES Courses(course_id),
                             day INTEGER NOT NULL,
                             start_time INTEGER,
@@ -41,7 +41,7 @@ def create_db():
                             rating INTEGER,
                             user_id INTEGER NOT NULL REFERENCES Users(user_id),
                             course_id INTEGER NOT NULL REFERENCES Courses(course_id),
-                            class_id INTEGER NOT NULL REFERENCES  Lectures(class_id),
+                            lecture_id INTEGER NOT NULL REFERENCES  Lectures(lecture_id),
                             rate_date INTEGER)""")
             cursor.execute("""CREATE TABLE Users_In_Courses(
                             user_id INTEGER NOT NULL REFERENCES Users(user_id),
@@ -154,7 +154,7 @@ def fetch_lectures(_course=None):
 def fetch_lecture_rating(_lecture):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""SELECT * FROM Rating WHERE class_id = (?)""", (_lecture,))
+        cursor.execute("""SELECT * FROM Rating WHERE lecture_id = (?)""", (_lecture,))
         return cursor.fetchall()
 
 
@@ -166,11 +166,11 @@ def add_user(_mac, _name):
         return cursor.lastrowid
 
 
-def add_rating(_rating, _user_id, _course_id, _class_id):
+def add_rating(_rating, _user_id, _course_id, _lecture_id):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""INSERT INTO Ratings (rating, user_id, course_id, class_id, rate_date)
-                          VALUES (?, ?, ?, ? ,?)""", (_rating, _user_id, _course_id, _class_id, int(time.time())))
+        cursor.execute("""INSERT INTO Ratings (rating, user_id, course_id, lecture_id, rate_date)
+                          VALUES (?, ?, ?, ? ,?)""", (_rating, _user_id, _course_id, _lecture_id, int(time.time())))
 
 
 def fetch_users():
@@ -255,7 +255,7 @@ def fetch_lectures_by_user_and_time(_user, _time):
     result = 0
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""SELECT l.class_id, l.course_id as course_id, day, location
+        cursor.execute("""SELECT l.lecture_id, l.course_id as course_id, day, location
                           FROM Lectures as l
                             JOIN Users_In_Courses as uic ON uic.course_id = l.course_id
                           WHERE uic.user_id=?
@@ -286,22 +286,22 @@ def get_possible_lecture(user_id):
     near_users = nearby_users(user_id, 10, -40)
 
     my_lectures = set(fetch_lectures_by_user_and_time(user_id, now))
-    my_lectures = set([class_id for class_id, course_id, day, location in my_lectures])
+    my_lectures = set([lecture_id for lecture_id, course_id, day, location in my_lectures])
     counter = dict()
     
 
     for near_user_id in near_users:
         lectures = fetch_lectures_by_user_and_time(user_id, now)
-        lectures = set([class_id for class_id, course_id, day, location in lectures])
+        lectures = set([lecture_id for lecture_id, course_id, day, location in lectures])
 
-        for class_id in my_lectures:
-            if class_id in lectures:
-                if class_id not in counter.keys():
-                    counter[class_id] = 0
+        for lecture_id in my_lectures:
+            if lecture_id in lectures:
+                if lecture_id not in counter.keys():
+                    counter[lecture_id] = 0
 
-                counter[class_id] += 1
+                counter[lecture_id] += 1
 
-    return [class_id for class_id, count in sorted(counter.iteritems(), key=lambda (k,v): (v,k), reverse=True)]
+    return [lecture_id for lecture_id, count in sorted(counter.iteritems(), key=lambda (k,v): (v,k), reverse=True)]
 
 
 if __name__ == '__main__':
