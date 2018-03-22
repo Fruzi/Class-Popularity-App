@@ -6,7 +6,7 @@ import time
 
 def main():
     create_db()
-    print times_attended_this_week(1,1)
+    print times_attended_this_week(1, 1)
 
 
 def create_db():
@@ -47,62 +47,10 @@ def create_db():
                             course_id INTEGER NOT NULL REFERENCES Courses(course_id))""")
 
 
-def fetch_departments():
-    with sqlite3.connect('example.db') as dbcon:
-        cursor = dbcon.cursor()
-        cursor.execute("""SELECT * FROM Departments""")
-        return cursor.fetchall()
-
-
-def fetch_courses(dep=None):
-    with sqlite3.connect('example.db') as dbcon:
-        cursor = dbcon.cursor()
-        if dep:
-            cursor.execute("""SELECT * FROM Courses WHERE department_id = (?)""", (dep,))
-        else:
-            cursor.execute("""SELECT * FROM Courses""")
-        return cursor.fetchall()
-
-
-def fetch_lectures(_course):
-    with sqlite3.connect('example.db') as dbcon:
-        cursor = dbcon.cursor()
-        cursor.execute("""SELECT * FROM Lectures WHERE course_id = (?)""", (_course,))
-        return cursor.fetchall()
-
-
-def fetch_lecture_rating(_lecture):
-    with sqlite3.connect('example.db') as dbcon:
-        cursor = dbcon.cursor()
-        cursor.execute("""SELECT * FROM Rating WHERE class_id = (?)""", (_lecture,))
-        return cursor.fetchall()
-
-
-def fetch_users():
-    with sqlite3.connect('example.db') as dbcon:
-        cursor = dbcon.cursor()
-        cursor.execute("""SELECT * FROM Users""")
-        return cursor.fetchall()
-
-
-def get_courses_of_user(_user_id):
-    with sqlite3.connect('example.db') as dbcon:
-        cursor = dbcon.cursor()
-        cursor.execute("""SELECT * FROM Users_In_Courses WHERE user_id=(?)""", (_user_id))
-        return cursor.fetchall()
-
-
-def fetch_user_rating(_user):
-    with sqlite3.connect('example.db') as dbcon:
-        cursor = dbcon.cursor()
-        cursor.execute("""SELECT * FROM Rating WHERE user_id = (?)""", (_user,))
-        return cursor.fetchall()
-
-
 def add_department(_num, _name):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""INSERT INTO Departments (department_num, department_name) VALUES(?)""",
+        cursor.execute("""INSERT INTO Departments (department_num, department_name) VALUES(?, ?)""",
                        (_num, _name))
         cursor.execute("""SELECT * FROM Departments WHERE department_name=(?) AND department_num=(?)""", (_name, _num))
         ret = cursor.fetchall()
@@ -139,6 +87,37 @@ def add_lecture(_course_id, _day, _start_time, _end_time, _location):
         return -1
 
 
+def fetch_departments():
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT * FROM Departments""")
+        return cursor.fetchall()
+
+
+def fetch_courses(dep=None):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        if dep:
+            cursor.execute("""SELECT * FROM Courses WHERE department_id = (?)""", (dep,))
+        else:
+            cursor.execute("""SELECT * FROM Courses""")
+        return cursor.fetchall()
+
+
+def fetch_lectures(_course):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT * FROM Lectures WHERE course_id = (?)""", (_course,))
+        return cursor.fetchall()
+
+
+def fetch_lecture_rating(_lecture):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT * FROM Rating WHERE class_id = (?)""", (_lecture,))
+        return cursor.fetchall()
+
+
 def add_user(_mac, _name, _last_antenna_data):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
@@ -165,16 +144,6 @@ def add_rating(_rating, _user_id, _course_id, _class_id):
                           VALUES (?, ?, ?, ? ,CURRENT_DATE)""", (_rating, _user_id, _course_id, _class_id))
 
 
-def lectures_screen(_course):
-    lectures = fetch_lectures(_course)
-    result = list()
-    for l in lectures:
-        rating = get_avg_rating(l[0])
-        density = get_avg_density(l[0])
-        result.append((l, rating, density))
-    return result
-
-
 def add_rating_test(_user_id, _course_id, _lecture_id, _rating, date):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
@@ -182,15 +151,32 @@ def add_rating_test(_user_id, _course_id, _lecture_id, _rating, date):
                           VALUES (?, ?, ?, ? ,?)""", (_rating, _user_id, _course_id, _lecture_id, date))
 
 
-def get_avg_rating(lecture):
-    ratings = fetch_lecture_rating(lecture)
-    num = 0
-    score = 0
-    for i in ratings:
-        if i[1]:
-            num += 1
-            score += i[1]
-    return float(score)/num
+def fetch_users():
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT * FROM Users""")
+        return cursor.fetchall()
+
+
+def get_courses_of_user(_user_id):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT course_id FROM Users_In_Courses WHERE user_id=(?)""", (_user_id, ))
+        return cursor.fetchall()
+
+
+def get_users_of_course(_course_id):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT user_id FROM Users_In_Courses WHERE course_id = (?)""", (_course_id,))
+        return cursor.fetchall()
+
+
+def fetch_user_rating(_user):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT * FROM Rating WHERE user_id = (?)""", (_user,))
+        return cursor.fetchall()
 
 
 def get_lecture_dates(lecture):
@@ -212,6 +198,17 @@ def get_avg_density(lecture):
         return float(total_density)/len(dates)
 
 
+def get_avg_rating(lecture):
+    ratings = fetch_lecture_rating(lecture)
+    num = 0
+    score = 0
+    for i in ratings:
+        if i[1]:
+            num += 1
+            score += i[1]
+    return float(score)/num
+
+
 def times_attended_this_week(lecture, user):
     result = 0
     with sqlite3.connect('example.db') as dbcon:
@@ -225,6 +222,19 @@ def times_attended_this_week(lecture, user):
                 result += 1
         return result
 
+
+def course_screen():
+    return fetch_departments(), fetch_courses()
+
+
+def lectures_screen(_course):
+    lectures = fetch_lectures(_course)
+    result = list()
+    for l in lectures:
+        rating = get_avg_rating(l[0])
+        density = get_avg_density(l[0])
+        result.append((l, rating, density))
+    return result
 
 
 if __name__ == '__main__':
