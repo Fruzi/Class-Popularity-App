@@ -169,7 +169,7 @@ def course_details(course_num, departemnt, year, semester, degree_level):
 
     courses = []
     
-    for lec in get_course_lectures():
+    for lec in get_course_lecture_times():
         course = {
             "course_name": get_course_name(),
             "course_num": course_num,
