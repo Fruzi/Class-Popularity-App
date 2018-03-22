@@ -46,6 +46,11 @@ class MainActivity : AppCompatActivity() {
                             //  Log.v(" BSSID ", " ${scan.BSSID}, Level: ${scan.level}")
                         }
                         Log.v(" abc ", hotspots.toString())
+                            
+                        val tempArr = JSONArray()
+                        tempArr.put(JSONObject("""{"dep":"202"}"""))
+                       // var temp = JSONArray(JSONObject("""{"dep":"202"}"""))
+                        request("132.73.222.44",8000,"fetch_courses",tempArr)
                     }
                 }
             }
@@ -55,5 +60,14 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         realm.close()
+    }
+    
+    fun request (ip :String,port :Int ,funcName:String,jsonArray: JSONArray )
+    {
+        val req =  "POST /$funcName HTTP1.1\r\nContent-Length: ${jsonArray.toString().length}\r\n\r\n$jsonArray\r\n\r\n"
+        var socket =  Socket(ip, port)
+        socket.getOutputStream().write(req.toByteArray())
+        val data = socket.getInputStream().bufferedReader().use { it.readText() }
+        Log.v("Response:\n", data)
     }
 }
