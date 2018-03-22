@@ -1,16 +1,15 @@
 import sqlite3
 import os
+from datetime import datetime
 
 
 def main():
-    create_db()
-    print add_course("Rawn", 1, 1)
-    print fetch_courses()
+    attended_this_week(1,1)
 
 
 def create_db():
-    db_existed = os.path.isfile('example.db')
-    with sqlite3.connect('example.db') as dbcon:
+    db_existed = os.path.isfile('RawnDB.db')
+    with sqlite3.connect('RawnDB.db') as dbcon:
         cursor = dbcon.cursor()
         if not db_existed:
             cursor.execute("""CREATE TABLE Departments (
@@ -22,7 +21,7 @@ def create_db():
                             name TEXT NOT NULL,
                             department_id INTEGER NOT NULL REFERENCES  Departments(department_id))""")
             cursor.execute("""CREATE TABLE Lectures (
-                            class_id INTEGER PRIMARY KEY NOT NULL,
+                            lecture_id INTEGER PRIMARY KEY NOT NULL,
                             course_id INTEGER NOT NULL REFERENCES Courses(course_id),
                             day INTEGER NOT NULL,
                             start_time INTEGER,
@@ -38,8 +37,8 @@ def create_db():
                             rating INTEGER,
                             user_id INTEGER NOT NULL REFERENCES Users(user_id),
                             course_id INTEGER NOT NULL REFERENCES Courses(course_id),
-                            class_id INTEGER NOT NULL REFERENCES  Lectures(class_id),
-                            date TEXT)""")
+                            lecture_id INTEGER NOT NULL REFERENCES  Lectures(lecture_id),
+                            lecture_date TEXT)""")
 
 
 def fetch_departments():
@@ -69,7 +68,7 @@ def fetch_lectures(_course):
 def fetch_lecture_rating(_lecture):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""SELECT * FROM Rating WHERE class_id = (?)""", (_lecture,))
+        cursor.execute("""SELECT * FROM Ratings WHERE lecture_id = (?)""", (_lecture,))
         return cursor.fetchall()
 
 
@@ -132,11 +131,60 @@ def update_last_antena_data(data, _user_id):
                        (data, _user_id))
 
 
-def add_rating(_rating, _user_id, _course_id, _class_id):
+def add_rating(_user_id, _course_id, _lecture_id, _rating=None):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""INSERT INTO Ratings (rating, user_id, course_id, class_id, date)
-                          VALUES (?, ?, ?, ? ,now())""", (_rating, _user_id, _course_id, _class_id))
+        cursor.execute("""INSERT INTO Ratings (rating, user_id, course_id, lecture_id, lecture_date)
+                          VALUES (?, ?, ?, ? ,CURRENT_DATE )""", (_rating, _user_id, _course_id, _lecture_id))
+
+
+def add_rating_test(_user_id, _course_id, _lecture_id, _rating, date):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""INSERT INTO Ratings (rating, user_id, course_id, lecture_id, lecture_date)
+                          VALUES (?, ?, ?, ? ,?)""", (_rating, _user_id, _course_id, _lecture_id, date))
+
+
+def get_avg_rating(lecture):
+    ratings = fetch_lecture_rating(lecture)
+    num = 0
+    score = 0
+    for i in ratings:
+        if i[1]:
+            num += 1
+            score += i[1]
+    return float(score)/num
+
+
+def get_lecture_dates(lecture):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT lecture_date FROM Ratings WHERE lecture_id = (?)""", (lecture,))
+        return list(set(cursor.fetchall()))
+
+
+def get_avg_density(lecture):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        dates = get_lecture_dates(lecture)
+        total_density = 0
+        for date in dates:
+            cursor.execute("""SELECT * FROM Ratings WHERE lecture_date = (?)""", (date[0],))
+            date_density = len(cursor.fetchall())
+            total_density += date_density
+        return float(total_density)/len(dates)
+
+
+def attended_this_week(lecture, user):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT lecture_date FROM Ratings WHERE user_id=(?) AND lecture_id=(?)""", (user, lecture))
+        dates = cursor.fetchall()
+        for d in dates:
+            datetime_object = datetime.strptime(d[0], '%b %d %Y')
+            if datetime.time(datetime_object)
+
+
 
 if __name__ == '__main__':
     main()
