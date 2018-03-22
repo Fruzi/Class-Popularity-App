@@ -1,11 +1,12 @@
 import sqlite3
 import os
+import datetime
+import time
 
 
 def main():
     create_db()
-    print add_course("Rawn", 1, 1)
-    print fetch_courses()
+    print times_attended_this_week(1,1)
 
 
 def create_db():
@@ -28,8 +29,7 @@ def create_db():
                             day INTEGER NOT NULL,
                             start_time INTEGER,
                             end_time INTEGER,
-                            room INTEGER NOT NULL,
-                            building INTEGER NOT NULL)""")
+                            location TEXT NOT NULL)""")
             cursor.execute("""CREATE TABLE Users(
                             user_id INTEGER PRIMARY KEY NOT NULL,
                             mac TEXT NOT NULL,
@@ -124,15 +124,15 @@ def add_course(_num, _name, _dep):
         return -1
 
 
-def add_lecture(_course_id, _day, _start_time, _end_time, _room, _building):
+def add_lecture(_course_id, _day, _start_time, _end_time, _location):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
         cursor.execute("""INSERT INTO Lectures (course_id, day, start_time,
-                          end_time, room, building) VALUES (?, ?, ?, ?, ?, ?)""",
-                       (_course_id, _day, _start_time, _end_time, _room, _building))
+                          end_time, room, building) VALUES (?, ?, ?, ?, ?)""",
+                       (_course_id, _day, _start_time, _end_time, _location))
         cursor.execute(
-            """SELECT * FROM Lectures WHERE course_id =(?) AND day = (?) AND start_time =(?) AND building=(?) AND room=(?) """,
-            (_course_id, _day, _start_time, _building, _room))
+            """SELECT * FROM Lectures WHERE course_id =(?) AND day = (?) AND start_time =(?) AND location=(?) """,
+            (_course_id, _day, _start_time, _location))
         ret = cursor.fetchall()
         if ret:
             return ret[0]
@@ -212,14 +212,18 @@ def get_avg_density(lecture):
         return float(total_density)/len(dates)
 
 
-def attended_this_week(lecture, user):
+def times_attended_this_week(lecture, user):
+    result = 0
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
         cursor.execute("""SELECT lecture_date FROM Ratings WHERE user_id=(?) AND lecture_id=(?)""", (user, lecture))
         dates = cursor.fetchall()
         for d in dates:
-            datetime_object = datetime.strptime(d[0], '%b %d %Y')
-            if datetime.time(datetime_object)
+            datetime_object = time.strptime(d[0], '%b %d %Y')
+            now = datetime.datetime.now().isocalendar()[1]
+            if datetime_object.isocalender()[1] == now:
+                result += 1
+        return result
 
 
 
