@@ -1,5 +1,16 @@
 <resources>
     <string name="app_name">Application</string>
 
-    <string name="hello">Hello</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_main">MainActivity</string>
+
+    <string name="empty_course_list">No courses</string>
+    <string name="course_name_placeholder">Course Name</string>
+    <string name="department_text">Department:</string>
+    <string name="department_num_placeholder">202</string>
+    <string name="course_num_text">Course no.:</string>
+    <string name="course_num_placeholder">202-1-5746</string>
+    <string name="new_course">New course</string>
+    <string name="course_text">Course:</string>
+    <string name="add_course">Add course</string>
 </resources>
