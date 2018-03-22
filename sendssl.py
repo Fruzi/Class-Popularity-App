@@ -131,10 +131,33 @@ def course_details(course_num, departemnt, year, semester, degree_level):
         for m in re.finditer("""<tr.+?>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?</tr>""", lecture, re.DOTALL):
             lec = dict(zip(("group_num", "group_type", "lecturer", "time", "place"), m.groups()))
             
-            import IPython
-            IPython.embed()
+            SUNDAY    = """\xd7\x99\xd7\x95\xd7\x9d \xd7\x90"""
+            MONDAY    = """\xd7\x99\xd7\x95\xd7\x9d \xd7\x91"""
+            TUESDAY   = """\xd7\x99\xd7\x95\xd7\x9d \xd7\x92"""
+            WEDNESDAY = """\xd7\x99\xd7\x95\xd7\x9d \xd7\x93"""
+            THURSDAY  = """\xd7\x99\xd7\x95\xd7\x9d \xd7\x94"""
             
-            #lec["day"] = 
+            lec["day"] = 0
+            lec["start_time"] = ""
+            lec["end_time"] = ""
+            
+            if SUNDAY    in lec["time"]: lec["day"] = 1
+            if MONDAY    in lec["time"]: lec["day"] = 2
+            if TUESDAY   in lec["time"]: lec["day"] = 3
+            if WEDNESDAY in lec["time"]: lec["day"] = 4
+            if THURSDAY  in lec["time"]: lec["day"] = 5
+            
+            t = lec["time"].replace(SUNDAY, "").replace(MONDAY, "").replace(TUESDAY, "").replace(WEDNESDAY, "").replace(THURSDAY, "").strip()
+            
+            if t.count("-") == 1:
+                start_time, end_time = t.split("-")
+                lec["start_time"] = start_time.strip()
+                lec["end_time"] = end_time.strip()
+            
+            lec["place"] = lec["place"].replace("</br>", "").strip()
+            
+            if "goOpenGroups" in lec["place"] or len(lec["place"]) == "":
+                lec["place"] = "PlaceNotFound"
             
             return lec
 
@@ -145,7 +168,7 @@ def course_details(course_num, departemnt, year, semester, degree_level):
         "yaer": year,
         "semester": semester,
         "degree_level": degree_level,
-        "hourse": get_course_lectures()
+        "houres": get_course_lectures()
     }
     
     return course
@@ -183,7 +206,7 @@ def insert_to_db(limit=2):
     for departemnt in departemnt_list()[:limit]:
         dep_id = db.add_department(departemnt["departemnt_num"].decode("utf8"),
                                    departemnt["departemnt_name"].decode("utf8"))
-
+        
         if dep_id < 0:
             print "Error adding dep", departemnt["departemnt_num"]
             continue
@@ -197,13 +220,12 @@ def insert_to_db(limit=2):
                                       _dep=dep_id)
             
             for lec in course["houres"]:
-                db.add_lecure(_course_id=course_id,
-                              _day=1,
-                              _start_time=1,
-                              _end_time=1,
-                              _room=1,
-                              _building=1,
-                              )
+                db.add_lecture(_course_id=course_id,
+                               _day=lec["day"],
+                               _start_time=lec["start_time"],
+                               _end_time=lec["end_time"],
+                               _place=lec["place"],
+                               )
 
 insert_to_db()
     
