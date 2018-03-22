@@ -120,11 +120,13 @@ def course_details(course_num, departemnt, year, semester, degree_level):
     def get_course_name():
         return get_course_info('\xd7\xa9\xd7\x9d \xd7\x94\xd7\xa7\xd7\x95\xd7\xa8\xd7\xa1:')
     
-    def get_course_lectures():
+    def get_course_lecture_times():
         if "dataTable_header" not in html:
             return dict()
     
         lecture = html.split("dataTable_header")[1]
+        
+        times = []
     
         for m in re.finditer("""<tr.+?>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?</tr>""", lecture, re.DOTALL):
             lec = dict(zip(("group_num", "group_type", "lecturer", "time", "place"), m.groups()))
@@ -161,19 +163,26 @@ def course_details(course_num, departemnt, year, semester, degree_level):
             if "goOpenGroups" in lec["place"] or len(lec["place"]) == "":
                 lec["place"] = "PlaceNotFound"
             
-            return lec
+            times.append(lec)
+        
+        return times
 
-    course = {
-        "course_name": get_course_name(),
-        "course_num": course_num,
-        "departemnt": departemnt,
-        "yaer": year,
-        "semester": semester,
-        "degree_level": degree_level,
-        "houres": get_course_lectures()
-    }
+    courses = []
     
-    return course
+    for lec in get_course_lectures():
+        course = {
+            "course_name": get_course_name(),
+            "course_num": course_num,
+            "departemnt": departemnt,
+            "yaer": year,
+            "semester": semester,
+            "degree_level": degree_level,
+            "houres": lec
+        }
+        
+        courses.append(course)
+    
+    return courses
 
 def departemnt_list():
     html = departemnt_list_raw().split("""<OPTION SELECTED value="">""")[1]
@@ -197,7 +206,7 @@ def departemnt_courses(departemnt):
     courses = list()
     
     for c in course_list(departemnt):
-        courses.append(course_details(course_num=int(c["course_num"]), departemnt=int(c["departemnt"]), year=int(c["year"]), semester=int(c["semester"]), degree_level=int(c["degree_level"])))
+        courses += course_details(course_num=int(c["course_num"]), departemnt=int(c["departemnt"]), year=int(c["year"]), semester=int(c["semester"]), degree_level=int(c["degree_level"]))
     
     return courses
 
@@ -235,13 +244,3 @@ def insert_to_db(limit=2):
                            )
 
 insert_to_db()
-    
-#print departemnt_courses(1)
-#print departemnt_courses(2)
-#print departemnt_courses(3)
-#print departemnt_courses(201)
-#print departemnt_courses(202)
-
-
-#print course_details(course_num=1011, departemnt=202, year=2018, semester=2, degree_level=1)
-#print course_list(201)
