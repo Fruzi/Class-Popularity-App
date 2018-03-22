@@ -35,3 +35,8 @@ db.register_to_course(user_id, 5)
 db.register_to_course(user_id, 8)
 db.add_antenna(user_id, json.dumps([{"bssid": "aa:aa:aa", "snr": -50},
                                     {"bssid": "cc:cc:cc", "snr": -30}]))
+
+print db.nearby_users(json.dumps({"bssid": "aa:aa:aa", "snr": -50},
+                                 {"bssid": "cc:cc:cc", "snr": -30}),
+                      10, -40)
+print db.fetch_lectures_by_user_and_time(1, 12*60+30)

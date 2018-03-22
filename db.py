@@ -80,9 +80,12 @@ def fetch_antenna_users(_bssid, _max_time, _min_signal):
 
 def nearby_users(antenna_data, _max_time, _min_siganl):
     users = list()
+    antenna_data = json.loads(antenna_data)
+    
     for a in antenna_data:
         users += fetch_antenna_users(a[1], _max_time, _min_siganl)
-    list(set(users))
+
+    return list(set(users))
 
 
 def add_department(_num, _name):
@@ -238,9 +241,9 @@ def fetch_lectures_by_user_and_time(_user, _time):
     result = 0
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""SELECT class_id, course_id, day, start_time, end_time, location
+        cursor.execute("""SELECT class_id, l.course_id as course_id, day, start_time, end_time, location
                           FROM Lectures as l
-                            JOIN Users_In_Courses as uic ON uic.course_id = c.course_id
+                            JOIN Users_In_Courses as uic ON uic.course_id = l.course_id
                           WHERE uic.user_id=?
                             AND l.start_time >= ? AND l.end_time <= ?""", (_user, _time, _time))
         return list(cursor.fetchall())
