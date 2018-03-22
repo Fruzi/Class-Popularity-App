@@ -66,7 +66,7 @@ def add_lecture(_course_id, _day, _start_time, _end_time, _location):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
         cursor.execute("""INSERT INTO Lectures (course_id, day, start_time,
-                          end_time, room, building) VALUES (?, ?, ?, ?, ?)""",
+                          end_time, location) VALUES (?, ?, ?, ?, ?)""",
                        (_course_id, _day, _start_time, _end_time, _location))
         return cursor.lastrowid
 
