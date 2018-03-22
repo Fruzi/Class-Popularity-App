@@ -245,7 +245,7 @@ def fetch_lectures_by_user_and_time(_user, _time):
                           FROM Lectures as l
                             JOIN Users_In_Courses as uic ON uic.course_id = l.course_id
                           WHERE uic.user_id=?
-                            AND l.start_time >= ? AND l.end_time <= ?""", (_user, _time, _time))
+                            AND l.start_time <= ? AND ? <= l.end_time""", (_user, _time, _time))
         return list(cursor.fetchall())
 
 
