@@ -1,7 +1,14 @@
 package rawnsangels.bgu.application
 
 import android.Manifest
+import android.annotation.TargetApi
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
@@ -11,28 +18,38 @@ import kotlinx.android.synthetic.main.activity_main.*
 import android.net.wifi.WifiManager
 import android.os.AsyncTask
 import android.os.Build
+import android.support.v4.app.NotificationCompat
 import android.util.Log
+import android.widget.Toast
 import org.json.JSONArray
 import org.json.JSONObject
+import java.lang.ref.WeakReference
 import java.net.Socket
 
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var realm: Realm
+    private lateinit var mRealm: Realm
     private lateinit var mWifiManager: WifiManager
     var depsCourses: Map<String, List<String>> = mapOf()
+
+    private lateinit var mBroadcastReceiver: BroadcastReceiver
+
+    private lateinit var mNotificationManager: NotificationManager
+    private lateinit var mNotificationBuilder: NotificationCompat.Builder
+
+    private var currentLecture = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
 
-        realm = Realm.getDefaultInstance()
+        mRealm = Realm.getDefaultInstance()
 
         // remove this
-        realm.executeTransaction {
-            realm.deleteAll()
+        mRealm.executeTransaction {
+            mRealm.deleteAll()
         }
 
         depsCourses = mapOf(
@@ -52,6 +69,12 @@ class MainActivity : AppCompatActivity() {
             processWifiScan()
             //do something, permission was previously granted; or legacy device
         }
+
+        setupReceiver()
+        setupNotification()
+
+        // Notification test
+        showNotification("Operating Systems")
     }
 
     fun processWifiScan() {
@@ -74,11 +97,74 @@ class MainActivity : AppCompatActivity() {
 
                         val tempObj = JSONObject("""{"dep":"1"}""")
                        // var temp = JSONArray(JSONObject("""{"dep":"202"}"""))
-                        SocketTask("132.73.195.156",8000,"fetch_courses",tempObj).execute()
+                        SocketTask(this, "132.73.195.156",8000,"fetch_courses",tempObj).execute()
                     }
                 }
             }
         }
+    }
+
+    private fun setupReceiver() {
+        mBroadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val action = intent.action ?: return
+                when (action) {
+                    getString(R.string.action_rate_lesson) -> {
+                        Toast.makeText(context, "\"Rate\" clicked", Toast.LENGTH_SHORT).show()
+                    }
+                    getString(R.string.action_didnt_go) -> {
+                        Toast.makeText(context, "\"Didn't go\" clicked", Toast.LENGTH_SHORT).show()
+                    }
+                    else -> Log.v("onReceive", "error")
+                }
+            }
+        }
+        val intentFilter = IntentFilter()
+        intentFilter.addAction(getString(R.string.action_rate_lesson))
+        intentFilter.addAction(getString(R.string.action_didnt_go))
+        registerReceiver(mBroadcastReceiver, intentFilter)
+    }
+
+    private fun setupNotification() {
+        mNotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        mNotificationBuilder = NotificationCompat.Builder(this, getString(R.string.notification_channel_id))
+                .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                .setContentTitle(getString(R.string.notification_title))
+                .setContentIntent(PendingIntent.getActivity(this, 0,
+                        Intent(this, MainActivity::class.java),
+                        PendingIntent.FLAG_UPDATE_CURRENT))
+                .addAction(android.R.drawable.ic_notification_overlay,
+                        getString(R.string.notification_title),
+                        PendingIntent.getBroadcast(this, 0,
+                                Intent(getString(R.string.action_rate_lesson)),
+                                PendingIntent.FLAG_UPDATE_CURRENT))
+                .addAction(android.R.drawable.ic_notification_overlay,
+                        getString(R.string.notification_title),
+                        PendingIntent.getBroadcast(this, 0,
+                                Intent(getString(R.string.action_didnt_go)),
+                                PendingIntent.FLAG_UPDATE_CURRENT))
+                .setAutoCancel(true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            setupNotificationChannel()
+        }
+        mNotificationBuilder.build()
+    }
+
+    private fun showNotification(lecture: String) {
+        mNotificationBuilder.setContentText("How was $lecture?")
+        mNotificationManager.notify(R.integer.notification_id, mNotificationBuilder.build())
+
+    }
+
+    @TargetApi(Build.VERSION_CODES.O)
+    private fun setupNotificationChannel() {
+        val notificationChannel = NotificationChannel(
+                getString(R.string.notification_channel_id),
+                getString(R.string.app_name),
+                NotificationManager.IMPORTANCE_LOW)
+        notificationChannel.enableVibration(false)
+        notificationChannel.enableLights(false)
+        mNotificationManager.createNotificationChannel(notificationChannel)
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>,
@@ -92,26 +178,39 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        realm.close()
+        unregisterReceiver(mBroadcastReceiver)
+        mNotificationManager.cancelAll()
+        mRealm.close()
     }
 
-    class SocketTask(val ip: String, val port: Int, val funcName: String, val jsonObject: JSONObject)
+    class SocketTask(activity: AppCompatActivity, val ip: String, val port: Int, val funcName: String, val jsonObject: JSONObject)
         : AsyncTask<Void, Void, String?>() {
 
+        val activityRef: WeakReference<AppCompatActivity> = WeakReference(activity)
+
         override fun doInBackground(vararg params: Void?): String? {
-            val req =  "POST /$funcName HTTP/1.1\r\nContent-Length: ${jsonObject.toString().length}\r\n\r\n$jsonObject\r\n\r\n"
-            var socket =  Socket(ip, port)
-            Log.v("SocketTask", "Sending $req")
-            socket.getOutputStream().write(req.toByteArray())
-            socket.shutdownOutput()
-            val data = socket.getInputStream().bufferedReader().use {
-                it.readText()
+            return try {
+                val req =  "POST /$funcName HTTP/1.1\r\nContent-Length: ${jsonObject.toString().length}\r\n\r\n$jsonObject\r\n\r\n"
+                var socket =  Socket(ip, port)
+                Log.v("SocketTask", "Sending $req")
+                socket.getOutputStream().write(req.toByteArray())
+                socket.shutdownOutput()
+                val data = socket.getInputStream().bufferedReader().use {
+                    it.readText()
+                }
+                data
+            } catch (e: Exception) {
+                null
             }
-            return data
         }
 
         override fun onPostExecute(result: String?) {
-            Log.v("SocketTask", "Response: $result")
+            if (result != null) {
+                Log.v("SocketTask", "Response: $result")
+            } else {
+                Log.e("SocketTask", "Connection failed")
+                activityRef.get()?.finish()
+            }
         }
     }
 

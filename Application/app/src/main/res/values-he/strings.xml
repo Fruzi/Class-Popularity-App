@@ -11,4 +11,9 @@
     <string name="new_course">קורס חדש</string>
     <string name="course_text">קורס:</string>
     <string name="add_course">הוסף קורס</string>
+
+    <string name="notification_title">דרג שיעור</string>
+    <string name="notification_rate">דרג</string>
+    <string name="notification_wrong_lecture">לא הייתי בשיעור הזה</string>
+    <string name="notification_dont_want">לא רוצה לדרג</string>
 </resources>

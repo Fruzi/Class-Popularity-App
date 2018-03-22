@@ -13,4 +13,15 @@
     <string name="new_course">New course</string>
     <string name="course_text">Course:</string>
     <string name="add_course">Add course</string>
+
+    <integer name="notification_id">1234</integer>
+    <string name="notification_channel_id">rawnsangels.bgu.application.NOTIFICATION_CHANNEL</string>
+    <string name="notification_title">Rate lesson</string>
+    <string name="notification_rate">Rate</string>
+    <string name="notification_wrong_lecture">I didn\'t go there</string>
+    <string name="notification_dont_want">Don\'t rate</string>
+
+    <string name="action_rate_lesson">rawnsangels.bgu.application.action.RATE_LESSON</string>
+    <string name="action_didnt_go">rawnsangels.bgu.application.action.WRONG_LESSON</string>
+
 </resources>
