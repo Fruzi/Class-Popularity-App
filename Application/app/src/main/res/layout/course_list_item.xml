@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingStart="@dimen/activity_horizontal_margin"
+    android:paddingEnd="@dimen/activity_horizontal_margin"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <TextView
+        android:id="@+id/courseTitle"
+        android:padding="8dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.AppCompat.Title"
+        app:layout_constraintBottom_toTopOf="@+id/departmentLayout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="@string/course_name_placeholder" />
+
+    <LinearLayout
+        android:id="@+id/departmentLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/courseTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/courseLayout"
+        app:layout_constraintHorizontal_chainStyle="spread_inside">
+
+        <TextView
+            android:id="@+id/departmentText"
+            android:text="@string/department_text"
+            android:padding="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat"/>
+
+        <TextView
+            android:id="@+id/departmentNum"
+            android:padding="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat"
+            tools:text="@string/department_num_placeholder" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/courseLayout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:layout_constraintTop_toBottomOf="@id/courseTitle"
+        app:layout_constraintStart_toEndOf="@id/departmentLayout"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:id="@+id/courseText"
+            android:text="@string/course_num_text"
+            android:padding="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat" />
+
+        <TextView
+            android:id="@+id/courseNum"
+            android:padding="8dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.AppCompat"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="@string/course_num_placeholder" />
+
+    </LinearLayout>
+
+
+
+</android.support.constraint.ConstraintLayout>

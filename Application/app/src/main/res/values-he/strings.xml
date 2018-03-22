@@ -1,5 +1,14 @@
 <resources>
     <string name="app_name">אפליקציה</string>
 
-    <string name="hello">שלום</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_main">MainActivity</string>
+
+    <string name="empty_course_list">אין קורסים</string>
+    <string name="course_name_placeholder">שם קורס</string>
+    <string name="department_text">מחלקה:</string>
+    <string name="course_num_text">מס\' קורס:</string>
+    <string name="new_course">קורס חדש</string>
+    <string name="course_text">קורס:</string>
+    <string name="add_course">הוסף קורס</string>
 </resources>
