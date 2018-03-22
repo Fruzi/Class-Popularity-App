@@ -2,11 +2,14 @@ import sqlite3
 import os
 import datetime
 import time
+import json
 
 
 def main():
-    add_department("45", "poooop")
-
+   jobj1 = [{"bssid" : "uirh34hui", "snr" : 6} , {"bssid" : "47gih4", "snr" : 33}]
+   print jobj1
+   print json.dumps(jobj1)
+    
 
 def create_db():
     db_existed = os.path.isfile('example.db')
@@ -32,8 +35,7 @@ def create_db():
             cursor.execute("""CREATE TABLE Users(
                             user_id INTEGER PRIMARY KEY NOT NULL,
                             mac TEXT NOT NULL,
-                            name TEXT NOT NULL,
-                            last_antenna_data TEXT)""")
+                            name TEXT NOT NULL)""")
             cursor.execute("""CREATE TABLE Ratings(
                             rating_id INTEGER PRIMARY KEY NOT NULL,
                             rating INTEGER,
@@ -44,8 +46,26 @@ def create_db():
             cursor.execute("""CREATE TABLE Users_In_Courses(
                             user_id INTEGER NOT NULL REFERENCES Users(user_id),
                             course_id INTEGER NOT NULL REFERENCES Courses(course_id))""")
-
-
+            cursor.execute("""CREATE TABLE Users_Near_Antennas(
+                            user_id INTEGER NOT NULL REFERENCES Users(user_id),
+                            bssid TEXT NOT NULL,
+                            signal INTEGER NOT NULL,
+                            date TEXT NOT NULL)""")
+                            
+def add_antenna(_user_id, _antenna_data):
+    curr_time = datetime.datetime.now()
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""DELETE FROM Users_Near_Antennas WHERE (user_id)=(?)""", (_user_id))
+        data = json.loads(_antenna_data)
+        for antenna in data:
+            _bssid = antenna["bssid"]
+            _signal = antenna["snr"]
+            cursor.execute("""INSERT INTO Users_Near_Antennas (user_id, bssid, signal, date) VALUES(?, ?, ?, ?)""", (_user_id, _bssid, _signal, curr_time))
+    return cursor.lastrowid
+    
+def 
+    
 def add_department(_num, _name):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
@@ -102,16 +122,13 @@ def fetch_lecture_rating(_lecture):
         return cursor.fetchall()
 
 
-def add_user(_mac, _name, _last_antenna_data):
+def add_user(_mac, _name):
     with sqlite3.connect('example.db') as dbcon:
         cursor = dbcon.cursor()
-        cursor.execute("""INSERT INTO Users (mac, name, last_antenna_data)VALUES (?, ?, ?)""",
-                       (_mac, _name, _last_antenna_data))
-        cursor.execute("""SELECT * FROM Users WHERE mac = (?)""", (_mac,))
-        ret = cursor.fetchall()
-        if ret:
-            return ret[0]
-        return -1
+        cursor.execute("""INSERT INTO Users (mac, name)VALUES (?, ?)""",
+                       (_mac, _name))
+        #cursor.execute("""SELECT * FROM Users WHERE mac = (?)""", (_mac,))
+        return cursor.lastrowid
 
 
 def update_last_antena_data(data, _user_id):

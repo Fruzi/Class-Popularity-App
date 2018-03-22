@@ -72,10 +72,9 @@ class MainActivity : AppCompatActivity() {
                         }
                         Log.v(" abc ", hotspots.toString())
 
-                        val tempArr = JSONArray()
-                        tempArr.put(JSONObject("""{"dep":"202"}"""))
+                        val tempObj = JSONObject("""{"dep":"1"}""")
                        // var temp = JSONArray(JSONObject("""{"dep":"202"}"""))
-                        SocketTask("132.73.195.156",8000,"fetch_courses",tempArr).execute()
+                        SocketTask("132.73.195.156",8000,"fetch_courses",tempObj).execute()
                     }
                 }
             }
@@ -96,19 +95,23 @@ class MainActivity : AppCompatActivity() {
         realm.close()
     }
 
-    class SocketTask(val ip: String, val port: Int, val funcName: String, val jsonArray: JSONArray)
+    class SocketTask(val ip: String, val port: Int, val funcName: String, val jsonObject: JSONObject)
         : AsyncTask<Void, Void, String?>() {
 
         override fun doInBackground(vararg params: Void?): String? {
-            val req =  "POST /$funcName HTTP1.1\r\nContent-Length: ${jsonArray.toString().length}\r\n\r\n$jsonArray\r\n\r\n"
+            val req =  "POST /$funcName HTTP/1.1\r\nContent-Length: ${jsonObject.toString().length}\r\n\r\n$jsonObject\r\n\r\n"
             var socket =  Socket(ip, port)
+            Log.v("SocketTask", "Sending $req")
             socket.getOutputStream().write(req.toByteArray())
-            val data = socket.getInputStream().bufferedReader().use { it.readText() }
+            socket.shutdownOutput()
+            val data = socket.getInputStream().bufferedReader().use {
+                it.readText()
+            }
             return data
         }
 
         override fun onPostExecute(result: String?) {
-            Log.v("Response:\n", result)
+            Log.v("SocketTask", "Response: $result")
         }
     }
 
