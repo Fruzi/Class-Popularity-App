@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import socket, ssl, select, sys, re
 from xml.dom import minidom
 
