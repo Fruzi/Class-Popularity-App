@@ -23,7 +23,6 @@ class CourseListFragment : ListFragment() {
     private lateinit var realm: Realm
     private lateinit var realmChangeListener: RealmChangeListener<Realm>
     private lateinit var mListAdapter: CourseListAdapter
-    private var depsCourses: Map<String, List<String>> = mapOf()
 
     private val activity: MainActivity
         get() = getActivity() as MainActivity
@@ -43,21 +42,15 @@ class CourseListFragment : ListFragment() {
         realmChangeListener = RealmChangeListener { updateList() }
         realm.addChangeListener(realmChangeListener)
 
-        depsCourses = mapOf(
-                "201 Mathematics" to listOf("20111002 Algebra"),
-                "202 Computer science" to listOf("20215764 Operating Systems",
-                        "20212264 Systems Programming")
-        )
-
         activity.fabAddCourse.setOnClickListener {
             // open new course dialog
             val dialogView = View.inflate(activity, R.layout.new_course_dialog, null)
             dialogView.departmentSpinner.adapter = ArrayAdapter<String>(activity,
                     android.R.layout.simple_spinner_dropdown_item,
-                    depsCourses.keys.toList())
+                    activity.depsCourses.keys.toList())
             dialogView.CourseSpinner.adapter = ArrayAdapter<String>(activity,
                     android.R.layout.simple_spinner_dropdown_item,
-                    depsCourses[dialogView.departmentSpinner.selectedItem])
+                    activity.depsCourses[dialogView.departmentSpinner.selectedItem])
             dialogView.departmentSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onNothingSelected(parent: AdapterView<*>?) {
 
@@ -66,7 +59,7 @@ class CourseListFragment : ListFragment() {
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                     dialogView.CourseSpinner.adapter = ArrayAdapter<String>(activity,
                             android.R.layout.simple_spinner_dropdown_item,
-                            depsCourses[dialogView.departmentSpinner.selectedItem])
+                            activity.depsCourses[dialogView.departmentSpinner.selectedItem])
                 }
             }
             val dialog = AlertDialog.Builder(activity)

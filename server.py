@@ -2,7 +2,6 @@
 import SimpleHTTPServer
 import SocketServer
 import json
-import IPython
 import  db
 
 PORT = 8000
