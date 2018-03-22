@@ -148,7 +148,7 @@ def course_details(course_num, departemnt, year, semester, degree_level):
             if THURSDAY  in lec["time"]: lec["day"] = 5
             
             if lec["day"] == 0:
-                print "No day for gorup", lec["group_num"]
+                #print "No day for gorup", lec["group_num"]
                 continue
             
             t = lec["time"].replace(SUNDAY, "").replace(MONDAY, "").replace(TUESDAY, "").replace(WEDNESDAY, "").replace(THURSDAY, "").strip()
