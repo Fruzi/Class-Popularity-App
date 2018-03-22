@@ -117,6 +117,8 @@ def course_details(course_num, departemnt, year, semester, degree_level):
             if info == k:
                 return v
 
+        return "NameNotFound"
+
     def get_course_name():
         return get_course_info('\xf9\xed \xe4\xf7\xe5\xf8\xf1:')
     
@@ -127,22 +129,26 @@ def course_details(course_num, departemnt, year, semester, degree_level):
         lecture = html.split("dataTable_header")[1]
     
         for m in re.finditer("""<tr.+?>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?<td.+?>(.+?)</td>.+?</tr>""", lecture, re.DOTALL):
-            return dict(zip(("group_num", "group_type", "lecturer", "time", "place"), m.groups()))
+            lec = dict(zip(("group_num", "group_type", "lecturer", "time", "place"), m.groups()))
+            
+            import IPython
+            IPython.embed()
+            
+            #lec["day"] = 
+            
+            return lec
 
-    return get_course_lectures()
-
+    course = {
+        "course_name": get_course_name(),
+        "course_num": course_num,
+        "departemnt": departemnt,
+        "yaer": year,
+        "semester": semester,
+        "degree_level": degree_level,
+        "hourse": get_course_lectures()
+    }
     
-    courses = []
-    
-    for m in list(re.finditer("javascript:goCourseSemester\('([^']+)','([^']+)','([^']+)','([^']+)','([^']+)'\)", html)):
-        departemnt, degree_level, course_num, year, semester = m.groups()
-        
-        course = dict(zip(("departemnt", "degree_level", "course_num", "year", "semester"), m.groups()))
-        course["course_num"] = course["course_num"].rjust(4, "0")
-        
-        courses.append(course)
-
-    return courses
+    return course
 
 def departemnt_list():
     html = departemnt_list_raw().split("""<OPTION SELECTED value="">""")[1]
@@ -175,16 +181,29 @@ def insert_to_db(limit=2):
     db.create_db()
 
     for departemnt in departemnt_list()[:limit]:
-        #print departemnt["departemnt_name"]
-        #return
-        db.add_department(departemnt["departemnt_name"].decode("utf8"))
-        return
-    
-    for departemnt in departemnt_list()[:limit]:
+        dep_id = db.add_department(departemnt["departemnt_num"].decode("utf8"),
+                                   departemnt["departemnt_name"].decode("utf8"))
+
+        if dep_id < 0:
+            print "Error adding dep", departemnt["departemnt_num"]
+            continue
+
         for course in departemnt_courses(int(departemnt["departemnt_num"])):
-            db.add_course(_num="myname",
-                          _name="",
-                          _dep="")
+            course_id = db.add_course(_num="%d.%d.%d" % (course["departemnt"],
+                                                         course["degree_level"],
+                                                         course["course_num"],
+                                                        ),
+                                      _name=course["course_name"].decode("utf8"),
+                                      _dep=dep_id)
+            
+            for lec in course["houres"]:
+                db.add_lecure(_course_id=course_id,
+                              _day=1,
+                              _start_time=1,
+                              _end_time=1,
+                              _room=1,
+                              _building=1,
+                              )
 
 insert_to_db()
     
