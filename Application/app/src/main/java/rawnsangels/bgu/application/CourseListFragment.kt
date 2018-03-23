@@ -13,7 +13,6 @@ import android.widget.ListView
 import android.widget.Toast
 import io.realm.Realm
 import io.realm.RealmChangeListener
-import io.realm.kotlin.createObject
 import io.realm.kotlin.where
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.new_course_dialog.view.*
@@ -44,13 +43,15 @@ class CourseListFragment : ListFragment() {
 
         activity.fabAddCourse.setOnClickListener {
             // open new course dialog
+            if (activity.depsCourses.isEmpty()) return@setOnClickListener
             val dialogView = View.inflate(activity, R.layout.new_course_dialog, null)
             dialogView.departmentSpinner.adapter = ArrayAdapter<String>(activity,
                     android.R.layout.simple_spinner_dropdown_item,
                     activity.depsCourses.keys.toList())
             dialogView.CourseSpinner.adapter = ArrayAdapter<String>(activity,
                     android.R.layout.simple_spinner_dropdown_item,
-                    activity.depsCourses[dialogView.departmentSpinner.selectedItem])
+                    activity.depsCourses[dialogView.departmentSpinner.selectedItem]
+                    !!.map { "${it.courseNumber} ${it.name}" })
             dialogView.departmentSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                 override fun onNothingSelected(parent: AdapterView<*>?) {
 
@@ -59,7 +60,8 @@ class CourseListFragment : ListFragment() {
                 override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                     dialogView.CourseSpinner.adapter = ArrayAdapter<String>(activity,
                             android.R.layout.simple_spinner_dropdown_item,
-                            activity.depsCourses[dialogView.departmentSpinner.selectedItem])
+                            activity.depsCourses[dialogView.departmentSpinner.selectedItem]
+                            !!.map { "${it.courseNumber} ${it.name}" })
                 }
             }
             val dialog = AlertDialog.Builder(activity)
@@ -67,15 +69,13 @@ class CourseListFragment : ListFragment() {
                     .setView(dialogView)
                     .setPositiveButton(R.string.add_course) { _, _ ->
                         // addCourse()
-                        val department = dialogView.departmentSpinner.selectedItem.toString()
-                                .split(" ", limit=2)
-                        val course = dialogView.CourseSpinner.selectedItem.toString()
-                                .split(" ", limit=2)
-                        val departmentId = Integer.parseInt(department[0])
-                        val courseId = Integer.parseInt(course[0])
-                        val courseName = course[1]
-                        addCourse(courseId, departmentId, courseName)
-
+                        val depName = dialogView.departmentSpinner.selectedItem.toString()
+                        val courseNum = dialogView.CourseSpinner.selectedItem.toString()
+                            .split(" ")[0]
+                        val courseObj = activity.depsCourses[depName]?.find {
+                            it.courseNumber == courseNum
+                        }!!
+                        addCourse(courseObj)
                     }
                     .setNegativeButton(android.R.string.cancel, null)
                     .create()
@@ -93,15 +93,13 @@ class CourseListFragment : ListFragment() {
         realm.close()
     }
 
-    private fun addCourse(courseId: Int, departmentId: Int, courseName: String) {
-        if (realm.where<Course>().equalTo("courseId", courseId).findFirst() == null) {
+    private fun addCourse(course: Course) {
+        if (realm.where<Course>().equalTo("courseId", course.courseId).findFirst() == null) {
             realm.executeTransaction {
-                val course = realm.createObject<Course>(courseId)
-                course.departmentId = departmentId
-                course.name = courseName
+                realm.insert(course)
             }
             Toast.makeText(activity,
-                    "Course added: $departmentId $courseId $courseName",
+                    "Course added: ${course.departmentId} ${course.courseId} ${course.name}",
                     Toast.LENGTH_SHORT).show()
         } else {
             Toast.makeText(activity, "Course already exists", Toast.LENGTH_SHORT).show()

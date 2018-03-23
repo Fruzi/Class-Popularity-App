@@ -28,7 +28,7 @@ class CourseListAdapter(val context: Context, data: List<Course>) : BaseAdapter(
         val course = getItem(i)
         listItemView.courseTitle.text = course.name
         listItemView.departmentNum.text = course.departmentId.toString()
-        listItemView.courseNum.text = course.courseId.toString()
+        listItemView.courseNum.text = course.courseNumber
 
         return listItemView
     }

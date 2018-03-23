@@ -31,14 +31,14 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var mRealm: Realm
     private lateinit var mWifiManager: WifiManager
-    var depsCourses: Map<String, List<String>> = mapOf()
+    var depsCourses: Map<String, List<Course>> = mutableMapOf()
 
     private lateinit var mBroadcastReceiver: BroadcastReceiver
 
     private lateinit var mNotificationManager: NotificationManager
     private lateinit var mNotificationBuilder: NotificationCompat.Builder
 
-    private var currentLecture = ""
+    private var currentLecture = "Operating Systems"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,15 +48,9 @@ class MainActivity : AppCompatActivity() {
         mRealm = Realm.getDefaultInstance()
 
         // remove this
-        mRealm.executeTransaction {
+        /*mRealm.executeTransaction {
             mRealm.deleteAll()
-        }
-
-        depsCourses = mapOf(
-                "201 Mathematics" to listOf("20114312 Algebra"),
-                "202 Computer Science" to listOf("20213521 Operating Systems",
-                                               "20218745 Intro to CS")
-        )
+        }*/
 
         mWifiManager = applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
 
@@ -64,17 +58,15 @@ class MainActivity : AppCompatActivity() {
                 && checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.ACCESS_COARSE_LOCATION),
                     PERMISSIONS_REQUEST_CODE_ACCESS_COARSE_LOCATION)
-            //After this point you wait for callback in onRequestPermissionsResult(int, String[], int[]) overriden method
         } else {
             processWifiScan()
-            //do something, permission was previously granted; or legacy device
         }
 
         setupReceiver()
         setupNotification()
 
         // Notification test
-        showNotification("Operating Systems")
+        showNotification(currentLecture)
     }
 
     fun processWifiScan() {
@@ -95,9 +87,10 @@ class MainActivity : AppCompatActivity() {
                         }
                         Log.v(" abc ", hotspots.toString())
 
-                        val tempObj = JSONObject("""{"dep":"1"}""")
+                        //val tempObj = JSONObject("""{"dep":"1"}""")
                        // var temp = JSONArray(JSONObject("""{"dep":"202"}"""))
-                        SocketTask(this, "132.73.195.156",8000,"fetch_courses",tempObj).execute()
+                        //SocketTask(this, "132.73.195.156",8000,"course_screen",tempObj).execute()
+                        CourseScreenRequestTask(this, "132.73.195.156",8000,"course_screen",JSONObject()).execute()
                     }
                 }
             }
@@ -183,33 +176,69 @@ class MainActivity : AppCompatActivity() {
         mRealm.close()
     }
 
-    class SocketTask(activity: AppCompatActivity, val ip: String, val port: Int, val funcName: String, val jsonObject: JSONObject)
+    class CourseScreenRequestTask(activity: MainActivity,
+                                  val ip: String,
+                                  val port: Int,
+                                  val funcName: String,
+                                  val jsonObject: JSONObject)
         : AsyncTask<Void, Void, String?>() {
 
-        val activityRef: WeakReference<AppCompatActivity> = WeakReference(activity)
+        val activityRef: WeakReference<MainActivity> = WeakReference(activity)
 
         override fun doInBackground(vararg params: Void?): String? {
             return try {
                 val req =  "POST /$funcName HTTP/1.1\r\nContent-Length: ${jsonObject.toString().length}\r\n\r\n$jsonObject\r\n\r\n"
-                var socket =  Socket(ip, port)
+                val socket =  Socket(ip, port)
                 Log.v("SocketTask", "Sending $req")
                 socket.getOutputStream().write(req.toByteArray())
                 socket.shutdownOutput()
-                val data = socket.getInputStream().bufferedReader().use {
-                    it.readText()
+                val bufferedReader = socket.getInputStream().bufferedReader()
+                bufferedReader.use {
+                    it.readLine() // HTTP/1.1 200 OK
+                    val contentLength = it.readLine() // Content-Length: 13035
+                    var toRead = Integer.parseInt(contentLength.filter { it.isDigit() })
+                    it.readLine() // Empty line
+                    val stringBuilder = StringBuilder()
+                    while (toRead > 0) {
+                        stringBuilder.append(it.read().toChar())
+                        toRead--
+                    }
+                    stringBuilder.toString()
                 }
-                data
             } catch (e: Exception) {
                 null
             }
         }
 
         override fun onPostExecute(result: String?) {
-            if (result != null) {
-                Log.v("SocketTask", "Response: $result")
-            } else {
+            val activity = activityRef.get()!!
+            if (result == null) {
                 Log.e("SocketTask", "Connection failed")
-                activityRef.get()?.finish()
+                activity.finish()
+            }
+            val depsCourses = JSONArray(result)
+            val depsJson = depsCourses.get(0) as JSONArray // [department_id: Int, department_num: Int, department_name: String]
+            val coursesJson = depsCourses.get(1) as JSONArray // [course_id: Int, course_number: String, name: String,  department_id: Int]
+
+            var depMap: Map<Int, String> = mapOf()
+
+            for (i in 0 until depsJson.length()) {
+                val dep = depsJson.get(i) as JSONArray
+                val depId = dep.get(0) as Int
+                val depNum = dep.get(1) as Int
+                val depName = dep.get(2).toString()
+                depMap += depId to "$depNum $depName"
+            }
+
+            for (i in 0 until coursesJson.length()) {
+                val course = coursesJson.get(i) as JSONArray
+                val courseId = course.get(0) as Int
+                val courseNumber = course.get(1).toString()
+                val name = course.get(2).toString()
+                val depId = course.get(3) as Int
+                val courseObj = Course(courseId, courseNumber, name, depId)
+                val tempCourseList = activity.depsCourses[depMap[depId]!!] ?: listOf()
+                activity.depsCourses += depMap[depId]!! to tempCourseList + courseObj
             }
         }
     }

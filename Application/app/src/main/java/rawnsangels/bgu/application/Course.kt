@@ -4,6 +4,6 @@ import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
 
 open class Course(@PrimaryKey var courseId: Int = 0,
-                  var courseNumber: Int = 0,
-                  var departmentId: Int = 0,
-                  var name: String = "") : RealmObject()
+                  var courseNumber: String = "",
+                  var name: String = "",
+                  var departmentId: Int = 0) : RealmObject()
