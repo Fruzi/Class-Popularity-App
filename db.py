@@ -281,7 +281,7 @@ def lectures_screen(_course):
 def enrich(ids, full):
     def get_lec_by_id(id):
         for lec in full:
-            if lec["lecture_id"] == id:
+            if lec[0] == id:
                 return lec
 
     result = []
@@ -292,7 +292,7 @@ def enrich(ids, full):
     return result
 
 
-def get_possible_lecture_ids(user_id):
+def get_possible_lecture(user_id):
     now = datetime.datetime.now()
     now = now.hour * 60 + now.minute
     
@@ -304,13 +304,13 @@ def get_possible_lecture_ids(user_id):
     my_lectures_full = set(fetch_lectures_by_user_and_time(user_id, now))
     
     my_lectures = my_lectures_full
-    my_lectures = set([lecture_id for lecture_id, course_id, day, location in my_lectures])
+    my_lectures = set([lecture_id for lecture_id, course_id, day, location, course_name in my_lectures])
     counter = dict()
     
 
     for near_user_id in near_users:
         lectures = fetch_lectures_by_user_and_time(user_id, now)
-        lectures = set([lecture_id for lecture_id, course_id, day, location in lectures])
+        lectures = set([lecture_id for lecture_id, course_id, day, location, course_name in lectures])
 
         for lecture_id in my_lectures:
             if lecture_id in lectures:
@@ -322,7 +322,7 @@ def get_possible_lecture_ids(user_id):
     ids = sorted(counter.iteritems(), key=lambda (k,v): (v,k), reverse=True)
     
     # At least two students near by
-    ids = filter(lambda x, x[1] >= 2, ids)
+    ids = filter(lambda x: x[1] >= 2, ids)
     
     ids = [lecture_id for lecture_id, count in ids]
     
