@@ -149,6 +149,17 @@ def fetch_lectures(_course=None):
         cursor = dbcon.cursor()
         cursor.execute("""SELECT * FROM Lectures WHERE course_id = (?)""", (_course,))
         return cursor.fetchall()
+        
+        
+def fetch_lecture_times_by_user(_user_id):
+    with sqlite3.connect('example.db') as dbcon:
+        cursor = dbcon.cursor()
+        cursor.execute("""SELECT l.end_time, l.day
+                          FROM Lectures as l
+                            JOIN Users_In_Courses as uic ON uic.course_id = l.course_id
+                            JOIN Courses as c ON uic.course_id = c.course_id
+                          WHERE uic.user_id=? """, (_user_id,))
+        return cursor.fetchall()
 
 
 def fetch_lecture_rating(_lecture):
@@ -321,8 +332,8 @@ def get_possible_lecture(user_id):
 
     ids = sorted(counter.iteritems(), key=lambda (k,v): (v,k), reverse=True)
     
-    # At least two students near by
-    ids = filter(lambda x: x[1] >= 2, ids)
+    ## At least two students near by
+    #ids = filter(lambda x: x[1] >= 2, ids)
     
     ids = [lecture_id for lecture_id, count in ids]
     
