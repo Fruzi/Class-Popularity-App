@@ -160,7 +160,35 @@ def fetch_lecture_times_by_user(_user_id):
                             JOIN Courses as c ON uic.course_id = c.course_id
                           WHERE uic.user_id=? """, (_user_id,))
         return cursor.fetchall()
+        
+        
+def times_to_send_location(_user_id):
+    lec_end_times = fetch_lecture_times_by_user(_user_id)
+    
+    result = []
+    
+    # end_time = minutes past mid-night
+    
+    for end_time, day in lec_end_times:
+        # half hour before the end of lecture
+        result.append((end_time - 30, day))
 
+    return result
+
+
+def times_to_popup_rating_notifiction(_user_id):
+    lec_end_times = fetch_lecture_times_by_user(_user_id)
+    
+    result = []
+    
+    # end_time = minutes past mid-night
+    
+    for end_time, day in lec_end_times:
+        # 10 minutes after lecture
+        result.append((end_time + 10, day))
+
+    return result
+    
 
 def fetch_lecture_rating(_lecture):
     with sqlite3.connect('example.db') as dbcon:
